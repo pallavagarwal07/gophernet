@@ -1,6 +1,6 @@
 // +build !js
 
-package netgopher
+package gophernet
 
 import (
 	"io/ioutil"

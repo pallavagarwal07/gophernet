@@ -1,6 +1,6 @@
 // +build js
 
-package netgopher
+package gophernet
 
 import (
 	"github.com/gopherjs/gopherjs/js"
