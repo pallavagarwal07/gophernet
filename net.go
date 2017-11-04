@@ -1,3 +1,6 @@
 package gophernet
 
-var Get func(string) string = get
+import "net/url"
+
+var Get func(string, url.Values) ([]byte, error) = get
+var Post func(string, url.Values) ([]byte, error) = post
