@@ -40,9 +40,12 @@ var tests = map[string]func(t TB){
 }
 
 func TestGet(t TB) {
-	_, err := gophernet.Get("https://raw.githubusercontent.com/kovidgoyal/kitty/master/.travis.yml", nil)
+	got, err := gophernet.Get("http://localhost:8081", nil)
 	if err != nil {
 		t.Fatalf("Get failed with error %v", err)
+	}
+	if want := "Hello world!"; string(got) != want {
+		t.Fatalf("Got output: %q, Want: %q", string(got), want)
 	}
 }
 

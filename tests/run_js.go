@@ -127,3 +127,11 @@ func writeToDoc(results []Result) {
 	div.Set("innerHTML", string(out))
 	document.Get("head").Call("appendChild", div)
 }
+
+func getVal(out string) string {
+	var v interface{}
+	if err := json.Unmarshal([]byte(out), &v); err != nil {
+		return "--"
+	}
+	return v.(map[string]interface{})["value"].(string)
+}
