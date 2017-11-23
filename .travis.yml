@@ -1,0 +1,14 @@
+sudo: enabled
+language: go
+go:
+    - 1.x
+    - master
+
+before_install:
+    - go get -u github.com/gopherjs/gopherjs 
+    - go get -u github.com/gopherjs/jquery
+    - go get -u github.com/njasm/marionette_client
+    - go get -u github.com/gopherjs/jsbuiltin
+    - go install github.com/gopherjs/gopherjs 
+    - sudo apt install firefox
+
