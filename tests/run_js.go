@@ -121,11 +121,8 @@ func writeToDoc(results []Result) {
 		// So we can risk using panic(). TODO: handle properly.
 		panic(err)
 	}
-	document := js.Global.Get("document")
-	div := document.Call("createElement", "div")
-	div.Call("setAttribute", "id", "output_test")
-	div.Set("innerHTML", string(out))
-	document.Get("head").Call("appendChild", div)
+	window := js.Global.Get("window")
+	window.Set("my_important_result", string(out))
 }
 
 func getVal(out string) string {
@@ -133,5 +130,6 @@ func getVal(out string) string {
 	if err := json.Unmarshal([]byte(out), &v); err != nil {
 		return "--"
 	}
+	fmt.Println(out)
 	return v.(map[string]interface{})["value"].(string)
 }

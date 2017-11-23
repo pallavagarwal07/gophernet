@@ -16,22 +16,50 @@ import (
 	mcl "github.com/njasm/marionette_client"
 )
 
+var scriptName string
+
 func handler(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	fmt.Fprintf(w, "Hello world!")
+	fmt.Fprintf(w, "Hello World!")
 }
 
-func init() {
-	listener, err := net.Listen("tcp", ":8081")
+func handlerJS(w http.ResponseWriter, _ *http.Request) {
+	data, err := ioutil.ReadFile(scriptName)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Fprintf(w, "%s", data)
+}
+
+func handlerJShome(w http.ResponseWriter, _ *http.Request) {
+	fmt.Fprintf(w, `
+<html>
+	<head>
+		<script src="/script.js"></script>
+	</head>
+</html>
+	`)
+}
+
+func Init() {
+	listener, err := net.Listen("tcp", "0.0.0.0:"+PORT)
 	if err != nil {
 		panic(err)
 	}
 	http.HandleFunc("/", handler)
+	http.HandleFunc("/js", handlerJShome)
+	http.HandleFunc("/script.js", handlerJS)
 	go http.Serve(listener, nil)
 }
 
-func TestAllJS(t *testing.T) {
+func TestAll(t *testing.T) {
+	Init()
+	t.Run("TestAllJS", testAllJS)
+	t.Run("TestAllGo", testAllGo)
+}
+
+func testAllJS(t *testing.T) {
 	cmdSetup := `
 set -eu
 tmpDir="$(mktemp -d)"
@@ -44,7 +72,7 @@ echo ${tmpDir}/output.js
 		t.Fatal("Build failed:", err)
 	}
 
-	cmd := exec.Command("setsid", "firefox", "--headless", "--marionette", "--disable-gpu")
+	cmd := exec.Command("firefox", "--headless", "--marionette", "--disable-gpu")
 	outPipe, err := cmd.StdoutPipe()
 	if err != nil {
 		t.Fatal("Getting pipe failed:", err)
@@ -87,6 +115,7 @@ echo ${tmpDir}/output.js
 }
 
 func runTest(fname string, t *testing.T) {
+	scriptName = fname
 	client := mcl.NewClient()
 	if err := client.Connect("", 0); err != nil {
 		t.Fatal("Client connect failed:", err)
@@ -95,18 +124,25 @@ func runTest(fname string, t *testing.T) {
 	if err != nil {
 		t.Fatal("New Session failed:", err)
 	}
-	data, err := ioutil.ReadFile(fname)
-	if err != nil {
-		t.Fatal("File read failed:", err)
-	}
-	script := string(data)
-	_, err = client.ExecuteScript(script, nil, 1000, false)
-	if err != nil {
-		t.Fatal("Execute script failed:", err)
-	}
+	client.Navigate("http://localhost:" + PORT + "/js")
+	//	data, err := ioutil.ReadFile(fname)
+	//	if err != nil {
+	//		t.Fatal("File read failed:", err)
+	//	}
+	//script := string(data)
+	//	script := "window.my_important_result = 'hello world'"
+	//	_ = data
+	//	_, err = client.ExecuteScript(script, nil, 1000, false)
+	//	if err != nil {
+	//		t.Fatal("Execute script failed:", err)
+	//	}
 
 	isElemValue := func() (string, error) {
-		script := "if($('#output_test').length > 0) return $('#output_test').text(); return '--';"
+		script := `
+		if(typeof window.my_important_result !== 'undefined' && window.my_important_result[0] != '-') {
+			return window.my_important_result;
+		}
+		return '--';`
 		v, err := client.ExecuteScript(script, nil, 1000, false)
 		if err != nil {
 			return "", err
@@ -120,7 +156,8 @@ func runTest(fname string, t *testing.T) {
 
 	str, err := isElemValue()
 	for ; err != nil; str, err = isElemValue() {
-		time.Sleep(time.Millisecond * 20)
+		fmt.Println(err)
+		time.Sleep(time.Millisecond * 50)
 	}
 
 	var results []Result
@@ -137,7 +174,7 @@ func runTest(fname string, t *testing.T) {
 	}
 }
 
-func TestAllGo(t *testing.T) {
+func testAllGo(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) { test(t) })
 	}

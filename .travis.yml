@@ -1,8 +1,7 @@
 sudo: enabled
 language: go
 go:
-    - 1.x
-    - master
+    - 1.9
 
 before_install:
     - go get -u github.com/gopherjs/gopherjs 
@@ -12,3 +11,5 @@ before_install:
     - go install github.com/gopherjs/gopherjs 
     - sudo apt install firefox
 
+script:
+    - go test -v github.com/pallavagarwal07/gophernet/tests
