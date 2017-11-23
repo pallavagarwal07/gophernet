@@ -130,6 +130,5 @@ func getVal(out string) string {
 	if err := json.Unmarshal([]byte(out), &v); err != nil {
 		return "--"
 	}
-	fmt.Println(out)
 	return v.(map[string]interface{})["value"].(string)
 }

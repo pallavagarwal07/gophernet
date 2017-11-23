@@ -33,13 +33,7 @@ func handlerJS(w http.ResponseWriter, _ *http.Request) {
 }
 
 func handlerJShome(w http.ResponseWriter, _ *http.Request) {
-	fmt.Fprintf(w, `
-<html>
-	<head>
-		<script src="/script.js"></script>
-	</head>
-</html>
-	`)
+	fmt.Fprintf(w, `<html><head><script src="/script.js"></script></head></html>`)
 }
 
 func Init() {
@@ -125,17 +119,6 @@ func runTest(fname string, t *testing.T) {
 		t.Fatal("New Session failed:", err)
 	}
 	client.Navigate("http://localhost:" + PORT + "/js")
-	//	data, err := ioutil.ReadFile(fname)
-	//	if err != nil {
-	//		t.Fatal("File read failed:", err)
-	//	}
-	//script := string(data)
-	//	script := "window.my_important_result = 'hello world'"
-	//	_ = data
-	//	_, err = client.ExecuteScript(script, nil, 1000, false)
-	//	if err != nil {
-	//		t.Fatal("Execute script failed:", err)
-	//	}
 
 	isElemValue := func() (string, error) {
 		script := `
@@ -156,7 +139,6 @@ func runTest(fname string, t *testing.T) {
 
 	str, err := isElemValue()
 	for ; err != nil; str, err = isElemValue() {
-		fmt.Println(err)
 		time.Sleep(time.Millisecond * 50)
 	}
 
