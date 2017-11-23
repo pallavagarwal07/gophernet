@@ -8,7 +8,21 @@ import (
 
 	"github.com/gopherjs/gopherjs/js"
 	"github.com/gopherjs/jquery"
+	"github.com/gopherjs/jsbuiltin"
 )
+
+func GetIsNode() bool {
+	typeOf := jsbuiltin.TypeOf
+
+	if proc := js.Global.Get("process"); typeOf(proc) == "object" {
+		if ver := proc.Get("versions"); typeOf(ver) == "object" {
+			if node := ver.Get("node"); node != js.Undefined {
+				return true
+			}
+		}
+	}
+	return false
+}
 
 func init() {
 	// Check if jquery is loaded, and load if not. Note that the automatic
