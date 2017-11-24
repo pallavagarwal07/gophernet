@@ -92,6 +92,7 @@ func TestAll(t *testing.T) {
 }
 
 func testAllJS(t *testing.T, filename string) {
+	t.Parallel()
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
 		t.Fatal("GOPATH variable is not set")
@@ -207,6 +208,7 @@ func runTest(fname string, t *testing.T) {
 }
 
 func testAllGo(t *testing.T) {
+	t.Parallel()
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) { test(t) })
 	}

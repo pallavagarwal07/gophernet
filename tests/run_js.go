@@ -4,6 +4,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/gopherjs/gopherjs/js"
 )
@@ -33,24 +34,46 @@ func getVal(out string) string {
 	return v.(map[string]interface{})["value"].(string)
 }
 
+func runOneTest(name string, test func(t TB)) (result *Result) {
+	result = &Result{}
+	c := &customT{
+		name:    name,
+		failed:  false,
+		skipped: false,
+		skipStr: "",
+		log:     "",
+		err:     "",
+	}
+
+	defer func() {
+		result.Name = name
+		result.Fail = c.Failed()
+		result.Outp = c.err
+		if r := recover(); r != nil {
+			result.Fail = true
+		}
+	}()
+
+	t := &myT{
+		TB:     c,
+		backup: nil,
+	}
+	c.parent = t
+	test(t)
+
+	return result
+}
+
 func main() {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered in main", r)
+		}
+	}()
 	results := []Result{}
 	for name, test := range tests {
-		c := &customT{
-			name:    name,
-			failed:  false,
-			skipped: false,
-			skipStr: "",
-			log:     "",
-			err:     "",
-		}
-		test(c)
-		r := &Result{
-			Name: name,
-			Fail: c.Failed(),
-			Outp: c.err,
-		}
-		results = append(results, *r)
+		result := runOneTest(name, test)
+		results = append(results, *result)
 	}
 	writeToDoc(results)
 }

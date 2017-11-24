@@ -38,9 +38,14 @@ type customT struct {
 	skipStr string
 	log     string
 	err     string
+	parent  *myT
 }
 
 var _ TB = &customT{}
+
+func (c *customT) Stop() {
+	c.parent.Stop()
+}
 
 func (*customT) Helper() {
 	return
@@ -82,6 +87,7 @@ func (c *customT) Fail() {
 
 func (c *customT) FailNow() {
 	c.failed = true
+	c.Stop()
 }
 
 func (c *customT) Failed() bool {
@@ -101,9 +107,39 @@ func (c *customT) Errorf(format string, args ...interface{}) {
 func (c *customT) Fatal(args ...interface{}) {
 	c.failed = true
 	c.err = fmt.Sprint(args...)
+	c.Stop()
 }
 
 func (c *customT) Fatalf(format string, args ...interface{}) {
 	c.failed = true
 	c.err = fmt.Sprintf(format, args...)
+	c.Stop()
 }
+
+type myT struct {
+	TB
+	backup TB
+}
+
+func (m *myT) Stop() {
+	m.backup = m.TB
+	m.TB = &TBnop{}
+}
+
+type TBnop struct{}
+
+func (t *TBnop) Error(args ...interface{})                 {}
+func (t *TBnop) Errorf(format string, args ...interface{}) {}
+func (t *TBnop) Fail()                                     {}
+func (t *TBnop) FailNow()                                  {}
+func (t *TBnop) Failed() bool                              { return true }
+func (t *TBnop) Fatal(args ...interface{})                 {}
+func (t *TBnop) Fatalf(format string, args ...interface{}) {}
+func (t *TBnop) Log(args ...interface{})                   {}
+func (t *TBnop) Logf(format string, args ...interface{})   {}
+func (t *TBnop) Name() string                              { return "" }
+func (t *TBnop) Skip(args ...interface{})                  {}
+func (t *TBnop) SkipNow()                                  {}
+func (t *TBnop) Skipf(format string, args ...interface{})  {}
+func (t *TBnop) Skipped() bool                             { return false }
+func (t *TBnop) Helper()                                   {}
