@@ -7,8 +7,8 @@ import (
 	"net/url"
 
 	"github.com/gopherjs/gopherjs/js"
-	"github.com/gopherjs/jquery"
 	"github.com/gopherjs/jsbuiltin"
+	"honnef.co/go/js/xhr"
 )
 
 func GetIsNode() bool {
@@ -22,29 +22,6 @@ func GetIsNode() bool {
 		}
 	}
 	return false
-}
-
-func init() {
-	// Check if jquery is loaded, and load if not. Note that the automatic
-	// loading is needed for compatibility with `gopherjs serve`.
-	if k := js.Global.Get("jQuery"); k == js.Undefined {
-		c := make(chan string)
-		callback := func() {
-			c <- "done"
-		}
-		js.Global.Set("callbackFn", callback)
-
-		srcCDN := "https://code.jquery.com/jquery-3.2.1.min.js"
-		document := js.Global.Get("document")
-		s := document.Call("createElement", "script")
-		s.Call("setAttribute", "src", srcCDN)
-		s.Call("setAttribute", "type", "text/javascript")
-		s.Call("setAttribute", "onload", "callbackFn()")
-		document.Get("head").Call("appendChild", s)
-
-		// Stall the init function till jquery has been loaded.
-		<-c
-	}
 }
 
 func getErrorFunc(e chan error) func(map[string]interface{}, string) {
@@ -84,40 +61,23 @@ func get(urlStr string, params url.Values) ([]byte, error) {
 	urlParsed.RawQuery = queriesInitial.Encode()
 	urlStr = urlParsed.String()
 
-	d := make(chan string)
-	e := make(chan error)
-	jquery.Ajax(map[string]interface{}{
-		"type":    "GET",
-		"url":     urlStr,
-		"data":    []string{},
-		"success": func(data string) { d <- data },
-		"error":   getErrorFunc(e),
-	})
-
-	select {
-	case out := <-d:
-		return []byte(out), nil
-	case out := <-e:
-		return nil, out
+	req := xhr.NewRequest("GET", urlStr)
+	req.ResponseType = xhr.ArrayBuffer
+	err = req.Send(nil)
+	if err != nil {
+		return nil, err
 	}
+	b := js.Global.Get("Uint8Array").New(req.Response).Interface().([]byte)
+	return b, nil
 }
 
 func post(urlStr string, params url.Values) ([]byte, error) {
-	d := make(chan string)
-	e := make(chan error)
-	jquery.Ajax(map[string]interface{}{
-		"type":        "POST",
-		"url":         urlStr,
-		"data":        params,
-		"traditional": "true",
-		"success":     func(data string) { d <- data },
-		"error":       getErrorFunc(e),
-	})
-
-	select {
-	case out := <-d:
-		return []byte(out), nil
-	case out := <-e:
-		return nil, out
+	req := xhr.NewRequest("POST", urlStr)
+	req.ResponseType = xhr.ArrayBuffer
+	err := req.Send(params)
+	if err != nil {
+		return nil, err
 	}
+	b := js.Global.Get("Uint8Array").New(req.Response).Interface().([]byte)
+	return b, nil
 }
