@@ -8,7 +8,9 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -18,13 +20,13 @@ import (
 
 var scriptName string
 
-func handler(w http.ResponseWriter, _ *http.Request) {
+func handlerHome(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	fmt.Fprintf(w, "Hello World!")
 }
 
-func handlerJS(w http.ResponseWriter, _ *http.Request) {
+func handlerScript(w http.ResponseWriter, _ *http.Request) {
 	data, err := ioutil.ReadFile(scriptName)
 	if err != nil {
 		panic(err)
@@ -32,8 +34,9 @@ func handlerJS(w http.ResponseWriter, _ *http.Request) {
 	fmt.Fprintf(w, "%s", data)
 }
 
-func handlerJShome(w http.ResponseWriter, _ *http.Request) {
-	fmt.Fprintf(w, `<html><head><script src="/script.js"></script></head></html>`)
+func handlerJSHome(w http.ResponseWriter, _ *http.Request) {
+	fmt.Fprintf(w,
+		`<html><head><script src="/script.js"></script></head></html>`)
 }
 
 func Init() {
@@ -41,9 +44,9 @@ func Init() {
 	if err != nil {
 		panic(err)
 	}
-	http.HandleFunc("/", handler)
-	http.HandleFunc("/js", handlerJShome)
-	http.HandleFunc("/script.js", handlerJS)
+	http.HandleFunc("/", handlerHome)
+	http.HandleFunc("/js", handlerJSHome)
+	http.HandleFunc("/script.js", handlerScript)
 	go http.Serve(listener, nil)
 }
 
@@ -54,16 +57,34 @@ func TestAll(t *testing.T) {
 }
 
 func testAllJS(t *testing.T) {
-	cmdSetup := `
-set -eu
-tmpDir="$(mktemp -d)"
-cd ${GOPATH}/src/github.com/pallavagarwal07/gophernet/tests
-gopherjs build -o "${tmpDir}/output.js" $(ls -1 | grep -vP '_test.go')
-echo ${tmpDir}/output.js
-`
-	jsFile, err := exec.Command("sh", "-c", cmdSetup).CombinedOutput()
+	dir, err := ioutil.TempDir("", "golang")
 	if err != nil {
-		t.Fatal("Build failed:", err)
+		t.Fatal("Error creating temp directory:", err)
+	}
+	gopath := os.Getenv("GOPATH")
+	if gopath == "" {
+		t.Fatal("GOPATH variable is not set")
+	}
+
+	testDir := filepath.Join(
+		gopath, "src/github.com/pallavagarwal07/gophernet/tests")
+	fileList, err := ioutil.ReadDir(testDir)
+	if err != nil {
+		t.Fatal("ReadDir on test dir failed:", err)
+	}
+
+	files := []string{}
+	for _, finfo := range fileList {
+		if n := finfo.Name(); !strings.Contains(n, "_test.go") {
+			files = append(files, finfo.Name())
+		}
+	}
+
+	filename := filepath.Join(dir, "output.js")
+	args := []string{"build", "-o", filename}
+	buildCmd := exec.Command("gopherjs", append(args, files...)...)
+	if err := buildCmd.Run(); err != nil {
+		t.Fatal("Gopherjs compilation failed:", err)
 	}
 
 	cmd := exec.Command("firefox", "--headless", "--marionette", "--disable-gpu")
@@ -101,7 +122,7 @@ echo ${tmpDir}/output.js
 	if !bytes.Contains(output, []byte("Listening")) {
 		t.Fatal("Could not get listening process")
 	}
-	runTest(strings.TrimSpace(string(jsFile)), t)
+	runTest(filename, t)
 
 	if err := cmd.Process.Kill(); err != nil {
 		t.Fatal("Could not kill process:", err)
