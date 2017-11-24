@@ -87,14 +87,13 @@ func get(urlStr string, params url.Values) ([]byte, error) {
 	d := make(chan string)
 	e := make(chan error)
 	jquery.Ajax(map[string]interface{}{
-		"type": "GET",
-		"url":  urlStr,
-		"data": []string{},
-		"success": func(data string) {
-			d <- data
-		},
-		"error": getErrorFunc(e),
+		"type":    "GET",
+		"url":     urlStr,
+		"data":    []string{},
+		"success": func(data string) { d <- data },
+		"error":   getErrorFunc(e),
 	})
+
 	select {
 	case out := <-d:
 		return []byte(out), nil
@@ -111,11 +110,10 @@ func post(urlStr string, params url.Values) ([]byte, error) {
 		"url":         urlStr,
 		"data":        params,
 		"traditional": "true",
-		"success": func(data string) {
-			d <- data
-		},
-		"error": getErrorFunc(e),
+		"success":     func(data string) { d <- data },
+		"error":       getErrorFunc(e),
 	})
+
 	select {
 	case out := <-d:
 		return []byte(out), nil
