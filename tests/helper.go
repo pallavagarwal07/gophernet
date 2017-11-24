@@ -2,19 +2,16 @@ package main
 
 import "sort"
 
-type Pair struct {
-	fst string
-	snd string
-}
+type Pair [2]string
 
 func less(a Pair, b Pair) bool {
-	if a.fst < b.fst {
+	if a[0] < b[0] {
 		return true
 	}
-	if a.fst > b.fst {
+	if a[0] > b[0] {
 		return false
 	}
-	return a.snd < b.snd
+	return a[1] < b[1]
 }
 
 func sortPair(k []Pair) []Pair {
