@@ -1,6 +1,9 @@
 package main
 
-import "sort"
+import (
+	"math/rand"
+	"sort"
+)
 
 type Pair [2]string
 
@@ -24,4 +27,14 @@ func sortPair(k []Pair) []Pair {
 type Request struct {
 	Method string // GET or POST
 	Params []Pair
+}
+
+func deterministicBinData() []byte {
+	rand.Seed(10) // Set to a deterministic value everytime.
+	arr := make([]byte, 100, 100)
+	n, err := rand.Read(arr)
+	if err != nil {
+		panic(err)
+	}
+	return arr[:n]
 }

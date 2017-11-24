@@ -55,6 +55,11 @@ func handlerEcho(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%s", out)
 }
 
+func handlerBinary(w http.ResponseWriter, r *http.Request) {
+	binary := deterministicBinData()
+	fmt.Fprintf(w, "%s", binary)
+}
+
 func Init(t *testing.T) string {
 	dir, err := ioutil.TempDir("", "golang")
 	if err != nil {
@@ -73,6 +78,7 @@ func Init(t *testing.T) string {
 	http.HandleFunc("/", handlerHome)
 	http.HandleFunc("/js", handlerJSHome)
 	http.HandleFunc("/echo", handlerEcho)
+	http.HandleFunc("/binary", handlerBinary)
 	http.HandleFunc("/script.js", handlerFile)
 	go http.Serve(listener, nil)
 
@@ -106,9 +112,9 @@ func testAllJS(t *testing.T, filename string) {
 	}
 
 	args := []string{"build", "-o", filename}
-	buildCmd := exec.Command("gopherjs", append(args, files...)...)
-	if err := buildCmd.Run(); err != nil {
-		t.Fatal("Gopherjs compilation failed:", err)
+	buildOut, err := exec.Command("gopherjs", append(args, files...)...).CombinedOutput()
+	if err != nil {
+		t.Fatalf("Gopherjs compilation failed: %v, %s", err, buildOut)
 	}
 
 	cmd := exec.Command("firefox", "--headless", "--marionette", "--disable-gpu")

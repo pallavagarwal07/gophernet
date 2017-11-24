@@ -15,6 +15,7 @@ import (
 var tests = map[string]func(t TB){
 	"TestGet":           TestGet,
 	"TestGet_Method":    TestGet_Method,
+	"TestGet_Binary":    TestGet_Binary,
 	"TestGet_ParamsURL": TestGet_ParamsURL,
 	"TestGet_ParamsArg": TestGet_ParamsArg,
 	"TestGet_ParamsMix": TestGet_ParamsMix,
@@ -28,6 +29,17 @@ func TestGet(t TB) {
 	}
 	if want := "Hello World!"; string(got) != want {
 		t.Fatalf("Got output: %q, Want: %q", string(got), want)
+	}
+}
+
+func TestGet_Binary(t TB) {
+	got, err := gophernet.Get("http://localhost:"+PORT+"/binary", nil)
+	if err != nil {
+		t.Fatalf("GET failed with error %v", err)
+	}
+	want := deterministicBinData()
+	if !reflect.DeepEqual(want, got) {
+		t.Fatalf("Binary blob data does not match: Got %v, Want %v", got, want)
 	}
 }
 
