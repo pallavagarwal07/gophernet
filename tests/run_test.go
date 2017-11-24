@@ -18,16 +18,12 @@ import (
 	mcl "github.com/njasm/marionette_client"
 )
 
-var scriptName string
-
 func handlerHome(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	fmt.Fprintf(w, "Hello World!")
 }
 
-func handlerScript(w http.ResponseWriter, _ *http.Request) {
-	data, err := ioutil.ReadFile(scriptName)
+func handlerScript(w http.ResponseWriter, _ *http.Request, script string) {
+	data, err := ioutil.ReadFile(script)
 	if err != nil {
 		panic(err)
 	}
@@ -39,28 +35,57 @@ func handlerJSHome(w http.ResponseWriter, _ *http.Request) {
 		`<html><head><script src="/script.js"></script></head></html>`)
 }
 
-func Init() {
-	listener, err := net.Listen("tcp", "0.0.0.0:"+PORT)
-	if err != nil {
-		panic(err)
+func handlerEcho(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	params := []Pair{}
+	for name, arr := range query {
+		for _, val := range arr {
+			params = append(params, Pair{name, val})
+		}
 	}
-	http.HandleFunc("/", handlerHome)
-	http.HandleFunc("/js", handlerJSHome)
-	http.HandleFunc("/script.js", handlerScript)
-	go http.Serve(listener, nil)
+	req := Request{
+		Method: r.Method,
+		Params: sortPair(params),
+	}
+
+	out, err := json.Marshal(req)
+	if err != nil {
+		panic(err) // []Request is not cyclic, this will never be hit.
+	}
+	fmt.Fprintf(w, "%s", out)
 }
 
-func TestAll(t *testing.T) {
-	Init()
-	t.Run("TestAllJS", testAllJS)
-	t.Run("TestAllGo", testAllGo)
-}
-
-func testAllJS(t *testing.T) {
+func Init(t *testing.T) string {
 	dir, err := ioutil.TempDir("", "golang")
 	if err != nil {
 		t.Fatal("Error creating temp directory:", err)
 	}
+	filename := filepath.Join(dir, "output.js")
+
+	listener, err := net.Listen("tcp", "0.0.0.0:"+PORT)
+	if err != nil {
+		panic(err)
+	}
+
+	handlerFile := func(w http.ResponseWriter, r *http.Request) {
+		handlerScript(w, r, filename)
+	}
+	http.HandleFunc("/", handlerHome)
+	http.HandleFunc("/js", handlerJSHome)
+	http.HandleFunc("/echo", handlerEcho)
+	http.HandleFunc("/script.js", handlerFile)
+	go http.Serve(listener, nil)
+
+	return filename
+}
+
+func TestAll(t *testing.T) {
+	script := Init(t)
+	t.Run("TestAllJS", func(t *testing.T) { testAllJS(t, script) })
+	t.Run("TestAllGo", testAllGo)
+}
+
+func testAllJS(t *testing.T, filename string) {
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
 		t.Fatal("GOPATH variable is not set")
@@ -80,7 +105,6 @@ func testAllJS(t *testing.T) {
 		}
 	}
 
-	filename := filepath.Join(dir, "output.js")
 	args := []string{"build", "-o", filename}
 	buildCmd := exec.Command("gopherjs", append(args, files...)...)
 	if err := buildCmd.Run(); err != nil {
@@ -130,7 +154,6 @@ func testAllJS(t *testing.T) {
 }
 
 func runTest(fname string, t *testing.T) {
-	scriptName = fname
 	client := mcl.NewClient()
 	if err := client.Connect("", 0); err != nil {
 		t.Fatal("Client connect failed:", err)
