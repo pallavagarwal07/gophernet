@@ -8,6 +8,7 @@ before_install:
     - go get -u github.com/gopherjs/jquery
     - go get -u github.com/njasm/marionette_client
     - go get -u github.com/gopherjs/jsbuiltin
+    - go get -u honnef.co/go/js/xhr
     - go install github.com/gopherjs/gopherjs 
     - sudo apt install firefox
 
