@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -36,7 +37,16 @@ func handlerJSHome(w http.ResponseWriter, _ *http.Request) {
 }
 
 func handlerEcho(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
+	if err := r.ParseForm(); err != nil {
+		panic(err)
+	}
+
+	var query url.Values
+	if r.Method == "POST" {
+		query = r.PostForm
+	} else {
+		query = r.Form
+	}
 	params := []Pair{}
 	for name, arr := range query {
 		for _, val := range arr {

@@ -74,7 +74,8 @@ func get(urlStr string, params url.Values) ([]byte, error) {
 func post(urlStr string, params url.Values) ([]byte, error) {
 	req := xhr.NewRequest("POST", urlStr)
 	req.ResponseType = xhr.ArrayBuffer
-	err := req.Send(params)
+	req.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded")
+	err := req.Send(params.Encode())
 	if err != nil {
 		return nil, err
 	}
