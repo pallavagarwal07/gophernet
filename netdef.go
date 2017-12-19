@@ -3,6 +3,7 @@
 package gophernet
 
 import (
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -33,7 +34,19 @@ func get(urlStr string, params url.Values) ([]byte, error) {
 	return body, nil
 }
 
-func post(urlStr string, params url.Values) ([]byte, error) {
+func post(url string, contentType string, body io.Reader) ([]byte, error) {
+	resp, err := http.Post(url, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	output, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return output, nil
+}
+
+func postform(urlStr string, params url.Values) ([]byte, error) {
 	resp, err := http.PostForm(urlStr, params)
 	if err != nil {
 		return nil, err

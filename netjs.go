@@ -4,6 +4,8 @@ package gophernet
 
 import (
 	"errors"
+	"io"
+	"io/ioutil"
 	"net/url"
 
 	"github.com/gopherjs/gopherjs/js"
@@ -71,7 +73,23 @@ func get(urlStr string, params url.Values) ([]byte, error) {
 	return b, nil
 }
 
-func post(urlStr string, params url.Values) ([]byte, error) {
+func post(urlStr string, contentType string, body io.Reader) ([]byte, error) {
+	req := xhr.NewRequest("POST", urlStr)
+	req.ResponseType = xhr.ArrayBuffer
+	req.SetRequestHeader("Content-Type", contentType)
+	data, err := ioutil.ReadAll(body)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := req.Send(string(data)); err != nil {
+		return nil, err
+	}
+	b := js.Global.Get("Uint8Array").New(req.Response).Interface().([]byte)
+	return b, nil
+}
+
+func postform(urlStr string, params url.Values) ([]byte, error) {
 	req := xhr.NewRequest("POST", urlStr)
 	req.ResponseType = xhr.ArrayBuffer
 	req.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded")

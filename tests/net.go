@@ -13,18 +13,18 @@ import (
 // *_test.go format causes the `go run` to refuse to compile the test_runner.go
 // (used for the js tests).
 var tests = map[string]func(t TB){
-	"TestGet":            TestGet,
-	"TestGet_Method":     TestGet_Method,
-	"TestGet_Binary":     TestGet_Binary,
-	"TestGet_ParamsURL":  TestGet_ParamsURL,
-	"TestGet_ParamsArg":  TestGet_ParamsArg,
-	"TestGet_ParamsMix":  TestGet_ParamsMix,
-	"TestPost":           TestPost,
-	"TestPost_Method":    TestPost_Method,
-	"TestPost_Binary":    TestPost_Binary,
-	"TestPost_ParamsURL": TestPost_ParamsURL,
-	"TestPost_ParamsArg": TestPost_ParamsArg,
-	"TestPost_ParamsMix": TestPost_ParamsMix,
+	"TestGet":                TestGet,
+	"TestGet_Method":         TestGet_Method,
+	"TestGet_Binary":         TestGet_Binary,
+	"TestGet_ParamsURL":      TestGet_ParamsURL,
+	"TestGet_ParamsArg":      TestGet_ParamsArg,
+	"TestGet_ParamsMix":      TestGet_ParamsMix,
+	"TestPostForm":           TestPostForm,
+	"TestPostForm_Method":    TestPostForm_Method,
+	"TestPostForm_Binary":    TestPostForm_Binary,
+	"TestPostForm_ParamsURL": TestPostForm_ParamsURL,
+	"TestPostForm_ParamsArg": TestPostForm_ParamsArg,
+	"TestPostForm_ParamsMix": TestPostForm_ParamsMix,
 }
 
 func TestGet(t TB) {
@@ -127,8 +127,8 @@ func TestGet_ParamsMix(t TB) {
 	}
 }
 
-func TestPost(t TB) {
-	got, err := gophernet.Post("http://localhost:"+PORT, nil)
+func TestPostForm(t TB) {
+	got, err := gophernet.PostForm("http://localhost:"+PORT, nil)
 	if err != nil {
 		t.Fatalf("POST failed with error %v", err)
 	}
@@ -137,8 +137,8 @@ func TestPost(t TB) {
 	}
 }
 
-func TestPost_Binary(t TB) {
-	got, err := gophernet.Post("http://localhost:"+PORT+"/binary", nil)
+func TestPostForm_Binary(t TB) {
+	got, err := gophernet.PostForm("http://localhost:"+PORT+"/binary", nil)
 	if err != nil {
 		t.Fatalf("POST failed with error %v", err)
 	}
@@ -148,8 +148,8 @@ func TestPost_Binary(t TB) {
 	}
 }
 
-func TestPost_Method(t TB) {
-	got, err := gophernet.Post("http://localhost:"+PORT+"/echo", nil)
+func TestPostForm_Method(t TB) {
+	got, err := gophernet.PostForm("http://localhost:"+PORT+"/echo", nil)
 	if err != nil {
 		t.Fatalf("POST failed with error %v", err)
 	}
@@ -165,8 +165,8 @@ func TestPost_Method(t TB) {
 	}
 }
 
-func TestPost_ParamsURL(t TB) {
-	got, err := gophernet.Post("http://localhost:"+PORT+"/echo?a=b&c=d&a=g", nil)
+func TestPostForm_ParamsURL(t TB) {
+	got, err := gophernet.PostForm("http://localhost:"+PORT+"/echo?a=b&c=d&a=g", nil)
 	if err != nil {
 		t.Fatalf("POST failed with error %v", err)
 	}
@@ -183,12 +183,12 @@ func TestPost_ParamsURL(t TB) {
 	}
 }
 
-func TestPost_ParamsArg(t TB) {
+func TestPostForm_ParamsArg(t TB) {
 	args := url.Values{
 		"c": {"d"},
 		"a": {"b", "g"},
 	}
-	got, err := gophernet.Post("http://localhost:"+PORT+"/echo", args)
+	got, err := gophernet.PostForm("http://localhost:"+PORT+"/echo", args)
 	if err != nil {
 		t.Fatalf("POST failed with error %v", err)
 	}
@@ -205,12 +205,12 @@ func TestPost_ParamsArg(t TB) {
 	}
 }
 
-func TestPost_ParamsMix(t TB) {
+func TestPostForm_ParamsMix(t TB) {
 	args := url.Values{
 		"c": {"d"},
 		"a": {"b", "g"},
 	}
-	got, err := gophernet.Post("http://localhost:"+PORT+"/echo?a=l&m=n", args)
+	got, err := gophernet.PostForm("http://localhost:"+PORT+"/echo?a=l&m=n", args)
 	if err != nil {
 		t.Fatalf("POST failed with error %v", err)
 	}
