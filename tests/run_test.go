@@ -65,6 +65,15 @@ func handlerEcho(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%s", out)
 }
 
+func handlerHeader(w http.ResponseWriter, r *http.Request) {
+	headers := r.Header
+	out, err := json.Marshal(headers)
+	if err != nil {
+		panic(err) // Will never be hit.
+	}
+	fmt.Fprintf(w, "%s", out)
+}
+
 func handlerBinary(w http.ResponseWriter, r *http.Request) {
 	binary := deterministicBinData()
 	fmt.Fprintf(w, "%s", binary)
@@ -89,6 +98,7 @@ func Init(t *testing.T) string {
 	http.HandleFunc("/js", handlerJSHome)
 	http.HandleFunc("/echo", handlerEcho)
 	http.HandleFunc("/binary", handlerBinary)
+	http.HandleFunc("/header", handlerHeader)
 	http.HandleFunc("/script.js", handlerFile)
 	go http.Serve(listener, nil)
 

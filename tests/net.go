@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/url"
 	"reflect"
+	"strings"
 
 	"github.com/pallavagarwal07/gophernet"
 )
@@ -16,6 +17,7 @@ var tests = map[string]func(t TB){
 	"TestGet":                TestGet,
 	"TestGet_Method":         TestGet_Method,
 	"TestGet_Binary":         TestGet_Binary,
+	"TestGet_Header":         TestGet_Header,
 	"TestGet_ParamsURL":      TestGet_ParamsURL,
 	"TestGet_ParamsArg":      TestGet_ParamsArg,
 	"TestGet_ParamsMix":      TestGet_ParamsMix,
@@ -45,6 +47,28 @@ func TestGet_Binary(t TB) {
 	want := deterministicBinData()
 	if !reflect.DeepEqual(want, got) {
 		t.Fatalf("Binary blob data does not match: Got %v, Want %v", got, want)
+	}
+}
+
+func TestGet_Header(t TB) {
+	c := gophernet.Client{
+		Header: gophernet.Header{
+			"H1": []string{"First", "Second"},
+			"H2": []string{"Third"},
+		},
+	}
+	got, err := c.Get("http://localhost:"+PORT+"/header", nil)
+	if err != nil {
+		t.Fatalf("GET failed with error %v", err)
+	}
+	var out gophernet.Header
+	if err := json.Unmarshal(got, &out); err != nil {
+		t.Fatalf("JSON Unmarshal failed with error %v", err)
+	}
+	for key, list := range c.Header {
+		if got, want := strings.Join(out[key], ", "), strings.Join(list, ", "); got != want {
+			t.Fatalf("Incorrect header %s. Got: %v, want: %v\n", key, got, want)
+		}
 	}
 }
 

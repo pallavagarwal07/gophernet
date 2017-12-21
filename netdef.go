@@ -9,7 +9,7 @@ import (
 	"net/url"
 )
 
-func get(urlStr string, params url.Values) ([]byte, error) {
+func (c *Client) get(urlStr string, params Values) ([]byte, error) {
 	urlParsed, err := url.Parse(urlStr)
 	if err != nil {
 		return nil, err
@@ -23,7 +23,18 @@ func get(urlStr string, params url.Values) ([]byte, error) {
 	urlParsed.RawQuery = queriesInitial.Encode()
 	urlStr = urlParsed.String()
 
-	resp, err := http.Get(urlStr)
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", urlStr, nil)
+	if err != nil {
+		return nil, err
+	}
+	for key, list := range c.Header {
+		for _, val := range list {
+			req.Header[key] = append(req.Header[key], val)
+		}
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -34,8 +45,20 @@ func get(urlStr string, params url.Values) ([]byte, error) {
 	return body, nil
 }
 
-func post(url string, contentType string, body io.Reader) ([]byte, error) {
-	resp, err := http.Post(url, contentType, body)
+func (c *Client) post(url string, contentType string, body io.Reader) ([]byte, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return nil, err
+	}
+	for key, list := range c.Header {
+		for _, val := range list {
+			req.Header[key] = append(req.Header[key], val)
+		}
+	}
+	req.Header.Set("Content-Type", contentType)
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -44,16 +67,4 @@ func post(url string, contentType string, body io.Reader) ([]byte, error) {
 		return nil, err
 	}
 	return output, nil
-}
-
-func postform(urlStr string, params url.Values) ([]byte, error) {
-	resp, err := http.PostForm(urlStr, params)
-	if err != nil {
-		return nil, err
-	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return body, nil
 }

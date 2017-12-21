@@ -49,7 +49,7 @@ func getErrorFunc(e chan error) func(map[string]interface{}, string) {
 	}
 }
 
-func get(urlStr string, params url.Values) ([]byte, error) {
+func (c *Client) get(urlStr string, params Values) ([]byte, error) {
 	urlParsed, err := url.Parse(urlStr)
 	if err != nil {
 		return nil, err
@@ -64,6 +64,11 @@ func get(urlStr string, params url.Values) ([]byte, error) {
 	urlStr = urlParsed.String()
 
 	req := xhr.NewRequest("GET", urlStr)
+	for key, list := range c.Header {
+		for _, val := range list {
+			req.SetRequestHeader(key, val)
+		}
+	}
 	req.ResponseType = xhr.ArrayBuffer
 	err = req.Send(nil)
 	if err != nil {
@@ -73,9 +78,14 @@ func get(urlStr string, params url.Values) ([]byte, error) {
 	return b, nil
 }
 
-func post(urlStr string, contentType string, body io.Reader) ([]byte, error) {
+func (c *Client) post(urlStr string, contentType string, body io.Reader) ([]byte, error) {
 	req := xhr.NewRequest("POST", urlStr)
 	req.ResponseType = xhr.ArrayBuffer
+	for key, list := range c.Header {
+		for _, val := range list {
+			req.SetRequestHeader(key, val)
+		}
+	}
 	req.SetRequestHeader("Content-Type", contentType)
 	data, err := ioutil.ReadAll(body)
 	if err != nil {
@@ -83,18 +93,6 @@ func post(urlStr string, contentType string, body io.Reader) ([]byte, error) {
 	}
 
 	if err := req.Send(string(data)); err != nil {
-		return nil, err
-	}
-	b := js.Global.Get("Uint8Array").New(req.Response).Interface().([]byte)
-	return b, nil
-}
-
-func postform(urlStr string, params url.Values) ([]byte, error) {
-	req := xhr.NewRequest("POST", urlStr)
-	req.ResponseType = xhr.ArrayBuffer
-	req.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded")
-	err := req.Send(params.Encode())
-	if err != nil {
 		return nil, err
 	}
 	b := js.Global.Get("Uint8Array").New(req.Response).Interface().([]byte)
